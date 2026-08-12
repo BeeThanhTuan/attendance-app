@@ -154,11 +154,6 @@ export function useLocationVerification(
           },
 
           (error) => {
-            console.error(
-              "GPS ERROR:",
-              error,
-            );
-
             let message =
               "Không thể lấy vị trí của bạn.";
 

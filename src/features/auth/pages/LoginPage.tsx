@@ -41,7 +41,6 @@ export default function LoginPage() {
       },
 
       onError: (error) => {
-        console.error(error);
         alert("Sai tài khoản hoặc mật khẩu");
       },
     });

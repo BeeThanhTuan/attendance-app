@@ -399,13 +399,15 @@ export default function AttendanceDetailPage() {
                       }}
                     >
                       <TileLayer
-                        attribution='&copy; OpenStreetMap contributors &copy; CARTO'
-                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                        attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+                        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                         subdomains={["a", "b", "c", "d"]}
                         maxZoom={20}
-                        tileSize={256}
-                        noWrap={true}
-                        detectRetina={true}
+                        maxNativeZoom={20}
+                        keepBuffer={2}
+                        updateWhenIdle={false}
+                        updateWhenZooming
+                        crossOrigin
                       />
                       <MapCenterUpdater
                         center={mapCenter}

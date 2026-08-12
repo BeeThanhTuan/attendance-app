@@ -105,14 +105,14 @@ export default function ProfilePage() {
             <div className="space-y-2.5">
               {profile.face.registered ? (
                 <button onClick={() => navigate("/face-reregistration")}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 text-sm font-semibold text-white">
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-4xl bg-emerald-600 text-sm font-semibold text-white">
                   <ScanFace size={18} />
                   Đăng ký lại khuôn mặt
                 </button>
               ) : (
                 <button
                   onClick={() => navigate("/face-registration")}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 text-sm font-semibold text-white "
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-4xl bg-blue-500 text-sm font-semibold text-white "
                 >
                   <ScanFace size={18} />
                   Đăng ký khuôn mặt
@@ -126,7 +126,7 @@ export default function ProfilePage() {
                     replace: true,
                   });
                 }}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-red-200 bg-white text-sm font-semibold text-red-500"
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-4xl border border-red-200 bg-white text-sm font-semibold text-red-500"
               >
                 <LogOut size={17} />
                 Đăng xuất

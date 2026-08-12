@@ -38,7 +38,7 @@ export default function LocationStatusCard({
       <div className="flex items-center justify-between">
         <div
           className={`flex items-center gap-1.5 text-sm font-semibold ${
-            isWithinRadius ? "text-emerald-700" : "text-slate-500"
+            isWithinRadius ? "text-emerald-700" : "text-red-500"
           }`}
         >
           {isWithinRadius ? (

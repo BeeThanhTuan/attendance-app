@@ -35,7 +35,6 @@ export function useCheckOutFlow() {
   }, [todayAttendance, locations]);
 
   const nextLocation = useCallback((loc: Locations, lat: number, lng: number) => {
-    console.log("➡️ Check-out location step completed:", loc, lat, lng);
     setLocation(loc);
     setLatitude(lat);
     setLongitude(lng);
@@ -68,7 +67,6 @@ export function useCheckOutFlow() {
 
       setIsSuccess(true);
     } catch (err: any) {
-      console.error("Check-out error:", err);
       const detail = err?.response?.data?.detail;
       let message = "Chấm công ra thất bại. Vui lòng thử lại.";
 

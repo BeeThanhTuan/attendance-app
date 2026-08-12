@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { divIcon } from "leaflet";
 import {
   Circle,
@@ -12,89 +12,137 @@ import {
 import type { Locations } from "../../types/location.types";
 
 interface MapControllerProps {
-  position: [number, number];
+  workplacePosition: [number, number];
+  userPosition: [number, number] | null;
+  focusUserKey: number;
 }
 
-/**
- * --------------------------------------------------------
- * MAP CONTROLLER
- * --------------------------------------------------------
- *
- * Xử lý:
- * - Map container thay đổi kích thước
- * - Map render bên trong animation
- * - Map mount chưa có kích thước hoàn chỉnh
- * - Fly tới workplace sau khi map đã ready
- */
-function MapController({ position }: MapControllerProps) {
+function MapController({
+  workplacePosition,
+  userPosition,
+  focusUserKey,
+}: MapControllerProps) {
   const map = useMap();
 
-  useEffect(() => {
-    let frame1: number;
-    let frame2: number;
-    let timer: ReturnType<typeof setTimeout>;
+  const previousWorkplaceRef = useRef<[number, number] | null>(null);
+  const focusedUserKeyRef = useRef<number | null>(null);
 
-    const refreshMap = () => {
+  // =====================================================
+  // MAP SIZE
+  // =====================================================
+
+  useEffect(() => {
+    const refreshMapSize = () => {
       map.invalidateSize({
         animate: false,
         pan: false,
       });
     };
 
-    /**
-     * Đợi browser render xong layout
-     */
-    frame1 = requestAnimationFrame(() => {
-      refreshMap();
+    const frame1 = requestAnimationFrame(() => {
+      refreshMapSize();
 
-      frame2 = requestAnimationFrame(() => {
-        refreshMap();
-
-        /**
-         * Sau khi layout ổn định thêm một chút
-         */
-        timer = setTimeout(() => {
-          refreshMap();
-
-          map.flyTo(position, 17, {
-            animate: true,
-            duration: 0.8,
-          });
-        }, 150);
+      requestAnimationFrame(() => {
+        refreshMapSize();
       });
     });
 
-    /**
-     * Theo dõi kích thước container
-     */
-    const container = map.getContainer();
+    const timer = window.setTimeout(() => {
+      refreshMapSize();
+    }, 150);
 
     const resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(() => {
-        refreshMap();
-      });
+      requestAnimationFrame(refreshMapSize);
     });
 
-    resizeObserver.observe(container);
+    resizeObserver.observe(map.getContainer());
 
     return () => {
       cancelAnimationFrame(frame1);
-      cancelAnimationFrame(frame2);
-      clearTimeout(timer);
+      window.clearTimeout(timer);
       resizeObserver.disconnect();
     };
-  }, [map, position]);
+  }, [map]);
+
+  // =====================================================
+  // WORKPLACE
+  //
+  // Chỉ flyTo khi workplace thực sự thay đổi.
+  // =====================================================
+
+  useEffect(() => {
+    const previous = previousWorkplaceRef.current;
+
+    const workplaceChanged =
+      previous === null ||
+      previous[0] !== workplacePosition[0] ||
+      previous[1] !== workplacePosition[1];
+
+    if (!workplaceChanged) {
+      return;
+    }
+
+    previousWorkplaceRef.current = workplacePosition;
+
+    // Hủy animation hiện tại nếu có
+    map.stop();
+
+    // Reset trạng thái focus user
+    focusedUserKeyRef.current = null;
+
+    map.flyTo(workplacePosition, 17, {
+      animate: true,
+      duration: 0.8,
+    });
+  }, [
+    map,
+    workplacePosition[0],
+    workplacePosition[1],
+  ]);
+
+  // =====================================================
+  // USER LOCATION
+  //
+  // Chỉ flyTo khi focusUserKey thay đổi.
+  //
+  // GPS cập nhật bình thường:
+  // -> marker thay đổi
+  // -> map KHÔNG di chuyển.
+  // =====================================================
+
+  useEffect(() => {
+    if (!userPosition) {
+      return;
+    }
+
+    if (focusedUserKeyRef.current === focusUserKey) {
+      return;
+    }
+
+    focusedUserKeyRef.current = focusUserKey;
+
+    map.stop();
+
+    map.flyTo(userPosition, 17, {
+      animate: true,
+      duration: 0.8,
+    });
+  }, [
+    map,
+    userPosition,
+    focusUserKey,
+  ]);
 
   return null;
 }
 
-/**
- * --------------------------------------------------------
- * USER LOCATION ICON
- * --------------------------------------------------------
- */
+// =====================================================
+// USER LOCATION ICON
+// =====================================================
+
 const userLocationIcon = divIcon({
   className: "user-location-marker",
+
   html: `
     <div class="relative flex h-8 w-8 items-center justify-center">
       <div
@@ -122,15 +170,15 @@ const userLocationIcon = divIcon({
       ></div>
     </div>
   `,
+
   iconSize: [32, 32],
   iconAnchor: [16, 16],
 });
 
-/**
- * --------------------------------------------------------
- * TYPES
- * --------------------------------------------------------
- */
+// =====================================================
+// TYPES
+// =====================================================
+
 interface Props {
   workplace: Locations | null;
 
@@ -140,23 +188,24 @@ interface Props {
     latitude: number;
     longitude: number;
   } | null;
+
+  focusUserKey: number;
 }
 
-/**
- * --------------------------------------------------------
- * COMPONENT
- * --------------------------------------------------------
- */
+// =====================================================
+// COMPONENT
+// =====================================================
+
 export default function AttendanceMap({
   workplace,
   currentPosition,
   isWithinRadius,
+  focusUserKey,
 }: Props) {
-  /**
-   * ------------------------------------------------------
-   * NO WORKPLACE
-   * ------------------------------------------------------
-   */
+  // =====================================================
+  // NO WORKPLACE
+  // =====================================================
+
   if (!workplace) {
     return (
       <div className="flex h-full items-center justify-center rounded-2xl bg-slate-100 text-sm text-slate-400">
@@ -165,15 +214,34 @@ export default function AttendanceMap({
     );
   }
 
+  // =====================================================
+  // POSITIONS
+  // =====================================================
+
   const workplacePosition: [number, number] = [
     workplace.latitude,
     workplace.longitude,
   ];
 
-  const userPosition: [number, number] | null = currentPosition
-    ? [currentPosition.latitude, currentPosition.longitude]
-    : null;
-  const statusColor = isWithinRadius ? "#16a34a" : "#ef4444";
+  const userPosition: [number, number] | null =
+    currentPosition
+      ? [
+          currentPosition.latitude,
+          currentPosition.longitude,
+        ]
+      : null;
+
+  // =====================================================
+  // STATUS COLOR
+  // =====================================================
+
+  const statusColor = isWithinRadius
+    ? "#16a34a"
+    : "#ef4444";
+
+  // =====================================================
+  // CIRCLE
+  // =====================================================
 
   const radiusOptions = useMemo(
     () => ({
@@ -185,11 +253,9 @@ export default function AttendanceMap({
     [statusColor],
   );
 
-  /**
-   * ------------------------------------------------------
-   * LINE OPTIONS
-   * ------------------------------------------------------
-   */
+  // =====================================================
+  // LINE
+  // =====================================================
 
   const lineOptions = useMemo(
     () => ({
@@ -201,11 +267,9 @@ export default function AttendanceMap({
     [statusColor],
   );
 
-  /**
-   * ------------------------------------------------------
-   * RENDER
-   * ------------------------------------------------------
-   */
+  // =====================================================
+  // RENDER
+  // =====================================================
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-2xl">
@@ -213,38 +277,42 @@ export default function AttendanceMap({
         center={workplacePosition}
         zoom={17}
         minZoom={12}
-        maxZoom={19}
+        maxZoom={20}
         className="h-full w-full"
         zoomControl={false}
-        attributionControl={true}
+        attributionControl
       >
-        <MapController position={workplacePosition} />
-
-        {/* ==================================================
-            TILE LAYER
-        ================================================== */}
-
-        <TileLayer
-          attribution='&copy; OpenStreetMap contributors &copy; CARTO'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          subdomains={["a", "b", "c"]}
-          maxZoom={19}
-          maxNativeZoom={19}
-          keepBuffer={2}
-          updateWhenIdle={false}
-          updateWhenZooming={true}
-          crossOrigin={true}
+        <MapController
+          workplacePosition={workplacePosition}
+          userPosition={userPosition}
+          focusUserKey={focusUserKey}
         />
 
-        {/* ==================================================
+        {/* =================================================
+            TILE
+        ================================================= */}
+
+        <TileLayer
+          attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          subdomains={["a", "b", "c", "d"]}
+          maxZoom={20}
+          maxNativeZoom={20}
+          keepBuffer={2}
+          updateWhenIdle={false}
+          updateWhenZooming
+          crossOrigin
+        />
+
+        {/* =================================================
             WORKPLACE
-        ================================================== */}
+        ================================================= */}
 
         <Marker position={workplacePosition} />
 
-        {/* ==================================================
+        {/* =================================================
             CHECK-IN RADIUS
-        ================================================== */}
+        ================================================= */}
 
         <Circle
           center={workplacePosition}
@@ -252,9 +320,9 @@ export default function AttendanceMap({
           pathOptions={radiusOptions}
         />
 
-        {/* ==================================================
+        {/* =================================================
             USER LOCATION
-        ================================================== */}
+        ================================================= */}
 
         {userPosition && (
           <>

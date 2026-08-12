@@ -18,7 +18,6 @@ export function useCheckInFlow() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   const nextLocation = useCallback((loc: Locations, lat: number, lng: number) => {
-    console.log("➡️ Location step completed:", loc, lat, lng);
     setLocation(loc);
     setLatitude(lat);
     setLongitude(lng);
@@ -26,7 +25,6 @@ export function useCheckInFlow() {
   }, []);
 
   const nextFace = useCallback((image: string) => {
-    console.log("➡️ Face step completed");
     setFaceImage(image);
     setStep(2);
   }, []);
@@ -61,7 +59,6 @@ export function useCheckInFlow() {
 
       setIsSuccess(true);
     } catch (err: any) {
-      console.error("Check-in error:", err);
       const detail = err?.response?.data?.detail;
       let message = "Chấm công thất bại. Vui lòng thử lại.";
 
