@@ -1,0 +1,11 @@
+export const FACE_CONFIG = {
+  MAX_FACES: 2,
+
+  MIN_DETECTION_CONFIDENCE: 0.7,
+
+  MIN_TRACKING_CONFIDENCE: 0.7,
+
+  HOLD_DURATION: 800,
+
+  TARGET_FPS: 30,
+} as const;
