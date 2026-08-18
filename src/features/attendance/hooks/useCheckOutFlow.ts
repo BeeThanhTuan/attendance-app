@@ -62,8 +62,8 @@ export function useCheckOutFlow() {
       });
 
       // Refetch queries
-      await queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
-      await queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      await queryClient.invalidateQueries({ queryKey: ["attendance", "today"] });
+      await queryClient.invalidateQueries({ queryKey: ["attendance-history"] });
 
       setIsSuccess(true);
     } catch (err: any) {

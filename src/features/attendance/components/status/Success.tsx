@@ -1,4 +1,4 @@
-import { CheckCircle2, ScanFace } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Success() {

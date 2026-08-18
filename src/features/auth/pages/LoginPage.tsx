@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Eye,
   EyeOff,
@@ -196,12 +196,12 @@ export default function LoginPage() {
                 <span>Ghi nhớ đăng nhập</span>
               </label>
 
-              <Link
+              {/* <Link
                 to="/forgot-password"
                 className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Quên mật khẩu?
-              </Link>
+              </Link> */}
             </div>
           </div>
 

@@ -1,4 +1,3 @@
-import type { AttendanceStatus } from "@/shared/types/attendance";
 import type { Role } from "@/shared/types/role";
 
 export interface Profile {

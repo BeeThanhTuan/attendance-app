@@ -42,7 +42,6 @@ export default function AttendanceStepper({ steps, currentStep }: Props) {
           }}
         >
           {steps.map((step, index) => {
-            const isCompleted = index < currentStep;
             const isActive = index === currentStep;
             const isPassed = index <= currentStep;
 

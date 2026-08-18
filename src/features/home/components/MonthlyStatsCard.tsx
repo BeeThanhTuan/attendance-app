@@ -11,7 +11,7 @@ export default function MonthlyStatsCard() {
 
   const monthString = String(month).padStart(2, "0");
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["attendance-history", year, month],
     queryFn: () => getAttendanceHistory(month, year),
   });
@@ -40,12 +40,16 @@ export default function MonthlyStatsCard() {
           <Loader2 size={18} className="animate-spin text-blue-500" />
           <span className="text-xs font-medium">Đang tải thống kê...</span>
         </div>
+      ) : isError ? (
+        <div className="flex items-center justify-center py-6 text-slate-400">
+          <span className="text-xs font-medium">Không thể tải thống kê</span>
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 divide-x divide-slate-100 pt-1">
           {/* Column 1: Đã chấm công */}
           <div className="flex flex-col items-center justify-center text-center">
             <span className="text-3xl font-bold tracking-tight text-slate-900 tabular-nums">
-              {data.worked_days}
+              {data?.worked_days ?? 0}
             </span>
             <span className="text-xs font-medium text-slate-500 mt-1">
               Đã chấm công
@@ -55,7 +59,7 @@ export default function MonthlyStatsCard() {
           {/* Column 2: Quên check out */}
           <div className="flex flex-col items-center justify-center text-center pl-3">
             <span className="text-3xl font-bold tracking-tight text-slate-900 tabular-nums">
-              {data.forgot_checkout_days}
+              {data?.forgot_checkout_days ?? 0}
             </span>
             <span className="text-xs font-medium text-slate-500 mt-1">
               Quên chấm công ra

@@ -24,7 +24,7 @@ import type {
 import {
   getAttendanceDetail,
 } from "@/lib/api/history.api";
-import { formatDateTime, formatDateDisplay, formatDateString } from "@/utils/date";
+import { formatDateTime, formatDateDisplay } from "@/utils/date";
 import { getImageUrl } from "@/lib/utils/image";
 
 import StatusBadge from "@/shared/ui/StatusBadge";

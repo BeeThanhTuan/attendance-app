@@ -13,32 +13,61 @@ export default defineConfig({
     basicSsl(),
     VitePWA({
       registerType: "autoUpdate",
+      // Bật PWA trong dev mode để test không cần build
+      devOptions: {
+        enabled: true,
+        type: "classic",
+        suppressWarnings: true,
+      },
       includeAssets: ["favicon.svg", "apple-touch-icon.png", "pwa-192x192.png", "pwa-512x512.png"],
+      // Workbox config: cache assets tĩnh + SPA fallback
+      workbox: {
+        navigateFallback: "/",
+        navigateFallbackDenylist: [/^\/api/, /^\/uploads/],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-cache",
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
       manifest: {
+        id: "/",
         name: "Hệ Thống Chấm Công",
         short_name: "Chấm Công",
         description: "Ứng dụng điểm danh & chấm công thông minh",
         theme_color: "#2563eb",
         background_color: "#2563eb",
         display: "standalone",
+        display_override: ["standalone"],
         orientation: "portrait",
         start_url: "/",
+        scope: "/",
+        categories: ["business", "productivity"],
         icons: [
           {
             src: "/pwa-192x192.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "any",
           },
           {
             src: "/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
+            purpose: "any",
           },
           {
             src: "/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "any maskable",
+            purpose: "maskable",
           },
         ],
       },

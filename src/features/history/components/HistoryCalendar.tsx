@@ -4,8 +4,8 @@ import type { HistoryDayItem } from "@/lib/api/history.api";
 interface Props {
   year: number;
   month: number; // 1-12
-  worked_days: number;
-  forgot_checkout_days: number;
+  worked_days?: number;
+  forgot_checkout_days?: number;
   days: HistoryDayItem[];
   onPrevMonth: () => void;
   onNextMonth: () => void;

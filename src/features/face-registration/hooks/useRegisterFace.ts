@@ -38,13 +38,11 @@ export function useRegisterFace(
       setError(null);
     },
 
-    async onSuccess() {
-      // Fetch lại profile ngay lập tức
-      await queryClient.refetchQueries({
+    onSuccess() {
+      setStatus("success");
+      queryClient.invalidateQueries({
         queryKey: ["profile"],
       });
-
-      setStatus("success");
     },
 
     onError(error: any) {

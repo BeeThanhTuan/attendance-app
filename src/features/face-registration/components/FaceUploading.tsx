@@ -1,7 +1,6 @@
 import { Loader2, XCircle, RefreshCw, ScanFace } from "lucide-react";
 
 import type { FaceDirection } from "../types/face";
-import { useNavigate } from "react-router-dom";
 
 const ORDER: FaceDirection[] = [
   "STRAIGHT",
@@ -33,10 +32,10 @@ interface Props {
 }
 
 export default function FaceUploading({
-  
   images,
   status,
   error,
+  onRetry,
 }: Props) {
   const sortedImages = [...images].sort(
     (a, b) =>
@@ -46,7 +45,6 @@ export default function FaceUploading({
 
   const uploadedCount = sortedImages.length;
   const totalCount = ORDER.length;
-  const navigate = useNavigate();
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-white px-6">
@@ -216,7 +214,7 @@ export default function FaceUploading({
 
             <button
               type="button"
-              onClick={() => navigate("/face-registration")}
+              onClick={onRetry}
               className="
                 mt-7
                 flex h-12 w-full

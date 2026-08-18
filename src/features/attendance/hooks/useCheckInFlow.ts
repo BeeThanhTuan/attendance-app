@@ -55,7 +55,9 @@ export function useCheckInFlow() {
       await checkInApi(formData);
 
       // Refresh today's attendance query
-      await queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
+      await queryClient.invalidateQueries({ queryKey: ["attendance", "today"] });
+      // Refresh monthly stats (MonthlyStatsCard)
+      await queryClient.invalidateQueries({ queryKey: ["attendance-history"] });
 
       setIsSuccess(true);
     } catch (err: any) {

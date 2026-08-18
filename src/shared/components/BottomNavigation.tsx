@@ -303,7 +303,7 @@ export default function BottomNavigation() {
     }
 
     // Menu dành riêng cho role
-    return item.roles.includes(role);
+    return !!role && item.roles.includes(role);
   });
 
   // Tránh layout nhảy từ 4 -> 5 item

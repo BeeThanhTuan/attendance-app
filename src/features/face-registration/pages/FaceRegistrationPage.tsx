@@ -1,11 +1,11 @@
 import FaceRegistrationFlow from "../components/FaceRegistrationFlow";
 
-export default function FaceReRegistrationPage() {
+export default function FaceRegistrationPage() {
   return (
     <FaceRegistrationFlow
       mode="register"
-      title="Đăng ký lại khuôn mặt"
-      successDescription="Khuôn mặt đã được cập nhật thành công."
+      title="Đăng ký khuôn mặt"
+      successDescription="Khuôn mặt đã được đăng ký thành công."
     />
   );
 }

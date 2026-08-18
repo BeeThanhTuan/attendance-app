@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from "react-router-dom";
 import BottomNavigation from "@/shared/components/BottomNavigation";
+import PWAInstallBanner from "@/shared/components/PWAInstallBanner";
 
 const HIDE_NAVIGATION_ROUTES = [
   "/attendance/check-in",
@@ -32,6 +33,7 @@ export default function MobileLayout() {
       </main>
 
       {!shouldHideNavigation && <BottomNavigation />}
+      <PWAInstallBanner />
     </div>
   );
 }
