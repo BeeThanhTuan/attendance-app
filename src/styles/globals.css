@@ -10,7 +10,7 @@ body,
 }
 
 .border-slate {
-  @apply border border-slate-300/80;
+  @apply border border-slate-200;
 }
 
 @theme {

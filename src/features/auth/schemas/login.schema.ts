@@ -8,6 +8,8 @@ export const loginSchema = z.object({
   password: z
     .string()
     .min(1, "Vui lòng nhập mật khẩu"),
+
+  remember: z.boolean(),
 });
 
 export type LoginForm = z.infer<typeof loginSchema>;

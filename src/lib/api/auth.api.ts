@@ -17,39 +17,72 @@ export const loginApi = async (
 
   formData.append("username", payload.employee_code);
   formData.append("password", payload.password);
+  formData.append("remember", String(payload.remember ?? true));
 
-  const { data } = await api.post<LoginResponse>("/auth/login", formData, {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
+  const { data } = await api.post<LoginResponse>(
+    "/auth/login",
+    formData,
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
     },
-  });
+  );
 
   // Chỉ lưu Access Token
-  localStorage.setItem("access_token", data.access_token);
+  //
+  // Refresh Token:
+  // - không được lưu localStorage
+  // - Backend lưu trong HttpOnly Cookie
+  localStorage.setItem(
+    "access_token",
+    data.access_token,
+  );
 
   return data;
 };
+
 
 /* ========================================
  * Refresh
  * ======================================== */
 
-export const refreshTokenApi = async (): Promise<RefreshTokenResponse> => {
-  // Refresh Token nằm trong HttpOnly Cookie
-  const { data } = await api.post<RefreshTokenResponse>("/auth/refresh");
+export const refreshTokenApi =
+  async (): Promise<RefreshTokenResponse> => {
+    // Refresh Token nằm trong HttpOnly Cookie.
+    //
+    // withCredentials: true trong axios
+    // sẽ tự động gửi Cookie lên Backend.
 
-  localStorage.setItem("access_token", data.access_token);
+    const { data } =
+      await api.post<RefreshTokenResponse>(
+        "/auth/refresh",
+      );
 
-  return data;
-};
+    localStorage.setItem(
+      "access_token",
+      data.access_token,
+    );
+
+    return data;
+  };
+
 
 /* ========================================
  * Logout
  * ======================================== */
 
-export const logoutApi = async () => {
-  // Backend sẽ tự lấy Cookie và xóa nó
-  await api.post("/auth/logout");
+export const logoutApi = async (): Promise<void> => {
+  try {
+    // Backend:
+    // 1. lấy refresh_token từ Cookie
+    // 2. revoke token
+    // 3. delete Cookie
 
-  localStorage.removeItem("access_token");
+    await api.post("/auth/logout");
+  } finally {
+    // Dù API logout có lỗi thì
+    // FE vẫn phải xóa access token.
+    localStorage.removeItem("access_token");
+  }
 };

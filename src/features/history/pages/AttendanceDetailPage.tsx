@@ -24,7 +24,8 @@ import type {
 import {
   getAttendanceDetail,
 } from "@/lib/api/history.api";
-import { formatDateTime, formatDateDisplay } from "@/utils/date";
+import { formatDateTime, formatDateDisplay, formatDateString } from "@/utils/date";
+import { getImageUrl } from "@/lib/utils/image";
 
 import StatusBadge from "@/shared/ui/StatusBadge";
 import AppHeader from "@/shared/components/Header";
@@ -48,12 +49,6 @@ function MapCenterUpdater({
 
   return null;
 }
-
-/* ============================================================
-   API BASE URL
-============================================================ */
-const BASE_URL =
-  import.meta.env.VITE_API_URL?.replace("/api/v1", "") ?? "";
 
 /* ============================================================
    PAGE
@@ -150,14 +145,12 @@ export default function AttendanceDetailPage() {
     record.check_out_at,
   );
 
+
   /* ==========================================================
      IMAGE URL
   ========================================================== */
   const imageUrl = record.checkin_image_path
-    ? `${BASE_URL}/${record.checkin_image_path.replace(
-      /\\/g,
-      "/",
-    )}`
+    ? getImageUrl(record.checkin_image_path)
     : null;
   /* ==========================================================
      MAP
@@ -235,6 +228,8 @@ export default function AttendanceDetailPage() {
                         </p>
                         <p className="mt-1 text-xl font-bold tracking-tight text-slate-900">
                           {checkIn.time}
+                          <span className="mx-2 text-slate-300">•</span>
+                          {checkIn.date}
                         </p>
                       </div>
                     </div>
@@ -308,9 +303,15 @@ export default function AttendanceDetailPage() {
                         : "text-slate-300"
                         }`}
                     >
-                      {record.check_out_at
-                        ? checkOut.time
-                        : "Chưa chấm công ra"}
+                      {record.check_out_at ? (
+                        <>
+                          {checkOut.time}
+                          <span className="mx-2 text-slate-300">•</span>
+                          {checkOut.date}
+                        </>
+                      ) : (
+                        "Chưa chấm công ra"
+                      )}
                     </p>
                     {/* Checkout location */}
                     {record.location &&

@@ -1,6 +1,6 @@
 import { CheckCircle2, Circle, Loader2, MapPin } from "lucide-react";
 import type { AttendanceResponse } from "../types/attendance.types";
-import { formatTimeString } from "@/utils/date";
+import { formatDateString, formatTimeString } from "@/utils/date";
 import { statusTextMap } from "@/shared/types/attendance";
 
 interface Props {
@@ -73,6 +73,8 @@ export default function AttendanceCard({ attendance, isLoading = false }: Props)
   const { label, formattedDate } = getAttendanceDateInfo(attendance?.attendance_date);
   const checkInTime = formatTimeString(attendance?.check_in_at ?? null);
   const checkOutTime = formatTimeString(attendance?.check_out_at ?? null);
+  const checkInDate = formatDateString(attendance?.check_in_at ?? null);
+  const checkOutDate = formatDateString(attendance?.check_out_at ?? null);
 
   const statusKey = attendance?.status || "not_checked_in";
   const statusConfig = statusTextMap[statusKey] || {
@@ -84,6 +86,7 @@ export default function AttendanceCard({ attendance, isLoading = false }: Props)
 
   const isCheckedIn = Boolean(attendance?.checked_in);
   const isCheckedOut = Boolean(attendance?.checked_out);
+
 
   return (
     <div className="rounded-2xl bg-white p-5 border-slate space-y-4">
@@ -118,12 +121,17 @@ export default function AttendanceCard({ attendance, isLoading = false }: Props)
         <div className="rounded-2xl bg-slate-50/80 border border-slate-100 p-3.5 flex flex-col justify-between">
           <span className="text-xs font-semibold text-slate-500">Chấm công vào</span>
 
-          <div className="my-2">
+          <div className="my-2 flex flex-col">
             <span
               className={`text-2xl font-bold tracking-tight tabular-nums ${isCheckedIn ? "text-emerald-600" : "text-slate-400"
                 }`}
             >
               {isCheckedIn ? checkInTime : "--:--"}
+            </span>
+            <span
+              className="text-xs font-semibold text-slate-500"
+            >
+              {checkInDate}
             </span>
           </div>
 
@@ -146,12 +154,17 @@ export default function AttendanceCard({ attendance, isLoading = false }: Props)
         <div className="rounded-2xl bg-slate-50/80 border border-slate-100 p-3.5 flex flex-col justify-between">
           <span className="text-xs font-semibold text-slate-500">Chấm công ra</span>
 
-          <div className="my-2">
+          <div className="my-2 flex flex-col">
             <span
               className={`text-2xl font-bold tracking-tight tabular-nums ${isCheckedOut ? "text-emerald-600" : "text-slate-400"
                 }`}
             >
               {isCheckedOut ? checkOutTime : "--:--"}
+            </span>
+            <span
+              className="text-xs font-semibold text-slate-500"
+            >
+              {checkOutDate}
             </span>
           </div>
 

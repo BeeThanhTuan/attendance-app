@@ -50,5 +50,17 @@ export default defineConfig({
     allowedHosts: [
       "rsr0mppx-5173.asse.devtunnels.ms", // Thêm chính xác domain devtunnel của bạn vào đây
     ],
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/uploads": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 });

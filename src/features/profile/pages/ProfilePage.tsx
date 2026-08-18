@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useProfile } from "../hooks/useProfile";
 import { useAuthStore } from "@/stores/auth.store";
 import avatar from "@/assets/avatar-placeholder.png";
+import { getImageUrl } from "@/lib/utils/image";
 export default function ProfilePage() {
   const navigate = useNavigate();
 
@@ -44,6 +45,10 @@ export default function ProfilePage() {
     },
   ];
 
+  const avatarUrl = profile?.face?.avatar_url
+    ? getImageUrl(profile.face.avatar_url)
+    : avatar;
+
   return (
     <div className="flex h-full flex-col">
       <Header title="Hồ sơ" showBack={false} />
@@ -52,7 +57,7 @@ export default function ProfilePage() {
           {/* Avatar */}
           <div className="flex flex-col items-center pb-4">
             <img
-              src={profile?.face.avatar_url ?? avatar}
+              src={avatarUrl}
               className="size-24 rounded-full border-3 border-slate-200 object-cover"
             />
 

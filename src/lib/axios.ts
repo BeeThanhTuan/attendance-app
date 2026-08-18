@@ -1,7 +1,8 @@
 import axios from "axios";
+import { useAuthStore } from "@/stores/auth.store";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: "/api/v1",
   timeout: 10000,
   withCredentials: true,
 });
@@ -29,26 +30,28 @@ api.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      originalRequest.url !== "/auth/refresh"
+      originalRequest.url !== "/auth/refresh" &&
+      originalRequest.url !== "/auth/login"
     ) {
       originalRequest._retry = true;
 
       try {
         const { data } = await api.post("/auth/refresh");
 
-        localStorage.setItem(
-          "access_token",
-          data.access_token,
-        );
+        useAuthStore.getState().login(data.access_token);
 
         originalRequest.headers.Authorization =
           `Bearer ${data.access_token}`;
 
         return api(originalRequest);
-      } catch {
-        localStorage.removeItem("access_token");
+      } catch (refreshError) {
+        useAuthStore.getState().logout();
 
-        window.location.href = "/login";
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+
+        return Promise.reject(refreshError);
       }
     }
 

@@ -1,13 +1,15 @@
-import { Bell } from "lucide-react";
 import type { Profile } from "@/features/profile/types/profile.types";
 import avatarPlaceholder from "@/assets/avatar-placeholder.png";
+import { getImageUrl } from "@/lib/utils/image";
 
 interface HomeHeaderProps {
   profile: Profile;
 }
 
 export default function HomeHeader({ profile }: HomeHeaderProps) {
-  const avatarUrl = profile.face?.avatar_url || avatarPlaceholder;
+  const avatarUrl = profile.face?.avatar_url
+    ? getImageUrl(profile.face.avatar_url)
+    : avatarPlaceholder;
   const subInfo = [profile.employee_code, profile.department]
     .filter(Boolean)
     .join(" • ");

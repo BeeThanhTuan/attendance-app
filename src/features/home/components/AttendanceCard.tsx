@@ -1,6 +1,6 @@
 import { CheckCircle2, Circle } from "lucide-react";
 import type { AttendanceResponse } from "@/features/attendance/types/attendance.types";
-import { formatTimeString } from "@/utils/date";
+import { formatDateString, formatTimeString } from "@/utils/date";
 import { statusTextMap } from "@/shared/types/attendance";
 
 interface TodayAttendanceCardProps {
@@ -61,7 +61,9 @@ function getAttendanceDateInfo(attendanceDateStr?: string): { label: string; for
 export default function AttendanceCard({ data }: TodayAttendanceCardProps) {
   const { label, formattedDate } = getAttendanceDateInfo(data.attendance_date);
   const checkInTime = formatTimeString(data.check_in_at);
+  const checkInDate = formatDateString(data.check_in_at);
   const checkOutTime = formatTimeString(data.check_out_at);
+  const checkOutDate = formatDateString(data.check_out_at);
 
   const statusConfig = statusTextMap[data.status] || {
     label: data.status,
@@ -85,12 +87,17 @@ export default function AttendanceCard({ data }: TodayAttendanceCardProps) {
         <div className="rounded-2xl bg-slate-50/80 border border-slate-100 p-3.5 flex flex-col justify-between">
           <span className="text-xs font-semibold text-slate-500">Chấm công vào</span>
 
-          <div className="my-2">
+          <div className="my-2 flex flex-col">
             <span
               className={`text-2xl font-bold tracking-tight tabular-nums ${data.checked_in ? "text-emerald-600" : "text-slate-400"
                 }`}
             >
               {data.checked_in ? checkInTime : "--:--"}
+            </span>
+            <span
+              className="text-xs font-semibold text-slate-500"
+            >
+              {checkInDate}
             </span>
           </div>
 
@@ -113,12 +120,17 @@ export default function AttendanceCard({ data }: TodayAttendanceCardProps) {
         <div className="rounded-2xl bg-slate-50/80 border border-slate-100 p-3.5 flex flex-col justify-between">
           <span className="text-xs font-semibold text-slate-500">Chấm công ra</span>
 
-          <div className="my-2">
+          <div className="my-2 flex flex-col">
             <span
               className={`text-2xl font-bold tracking-tight tabular-nums ${data.checked_out ? "text-emerald-600" : "text-slate-400"
                 }`}
             >
               {data.checked_out ? checkOutTime : "--:--"}
+            </span>
+            <span
+              className="text-xs font-semibold text-slate-500"
+            >
+              {checkOutDate}
             </span>
           </div>
 

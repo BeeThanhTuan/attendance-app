@@ -11,6 +11,35 @@ export const formatTimeString = (isoOrTimeString?: string | null): string => {
   }
 };
 
+export const formatDateString = (
+  isoOrDateString?: string | null
+): string => {
+  if (!isoOrDateString) return "--/--/----";
+
+  try {
+    if (isoOrDateString.includes("T")) {
+      const d = new Date(isoOrDateString);
+
+      return d.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    }
+
+    // Nếu chỉ là YYYY-MM-DD
+    const [year, month, day] = isoOrDateString.split("-");
+
+    if (year && month && day) {
+      return `${day}/${month}/${year}`;
+    }
+
+    return isoOrDateString;
+  } catch {
+    return isoOrDateString;
+  }
+};
+
 export const formatDateTime = (
   isoString: string | null,
 ): { date: string; time: string } => {

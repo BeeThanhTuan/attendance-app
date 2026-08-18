@@ -1,4 +1,4 @@
-import { CalendarClock, Info, MoveRight } from "lucide-react";
+import {Info, MoveRight } from "lucide-react";
 import type { Profile } from "@/features/profile/types/profile.types";
 
 interface Props {
