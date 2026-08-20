@@ -4,6 +4,7 @@ import { useCheckOutFlow } from "../hooks/useCheckOutFlow";
 
 import AttendanceFlowLayout from "../layouts/AttendanceFlowLayout";
 import LocationStep from "../components/steps/LocationStep";
+import FaceStep from "../components/steps/FaceStep";
 import ConfirmStep from "../components/steps/ConfirmStep";
 import Success from "../components/status/Success";
 
@@ -34,6 +35,7 @@ export default function CheckOutPage() {
       currentStep={flow.step}
       steps={[
         "Vị trí",
+        "Khuôn mặt",
         "Xác nhận",
       ]}
     >
@@ -48,11 +50,19 @@ export default function CheckOutPage() {
       )}
 
       {flow.step === 1 && (
+        <FaceStep
+          onBack={flow.back}
+          onNext={flow.nextFace}
+        />
+      )}
+
+      {flow.step === 2 && (
         <ConfirmStep
           mode="check-out"
           location={flow.location}
           latitude={flow.latitude}
           longitude={flow.longitude}
+          faceImage={flow.faceImage}
           isSubmitting={flow.isSubmitting}
           error={flow.submitError}
           onBack={flow.back}

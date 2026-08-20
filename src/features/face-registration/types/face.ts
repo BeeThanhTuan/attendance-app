@@ -1,10 +1,8 @@
-export type FaceDirection =
-  | "STRAIGHT"
-  | "LEFT"
-  | "RIGHT"
-  | "UP"
-  | "DOWN";
-
+export type FaceDirection = "STRAIGHT" | null;
+export type FaceDistance =
+  | "TOO_FAR"
+  | "GOOD"
+  | "TOO_CLOSE";
 export interface FacePose {
   yaw: number;
   pitch: number;
@@ -15,4 +13,5 @@ export interface FaceQuality {
   brightness: boolean;
   sharp: boolean;
   position: boolean;
+  eyesOpen: boolean;
 }

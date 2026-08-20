@@ -1,131 +1,216 @@
 import { useEffect, useRef, useState } from "react";
-import type { FaceDirection } from "../types/face";
+import type { FaceDistance } from "../types/face";
 
 interface Props {
   brightness: boolean;
   sharp: boolean;
   position: boolean;
+  distance: FaceDistance;
   eyesOpen: boolean;
-  direction: FaceDirection | null;
-  onCapture: (direction: FaceDirection) => void;
+  direction: boolean;
+  onCapture: (frameIndex: number) => void;
 }
 
-const STEPS: FaceDirection[] = [
-  "STRAIGHT",
-  "LEFT",
-  "RIGHT",
-  "UP",
-  "DOWN",
-];
+const REQUIRED_FRAMES = 3;
 
-const START_DELAY = 1000; // Chờ 2 giây
-const HOLD_TIME = 500;    // Giữ 0.5 giây
-const COOLDOWN = 450;
+const START_DELAY = 1000;
+const HOLD_TIME = 500;
+const FRAME_INTERVAL = 300;
+
 export function useFaceCollector({
   brightness,
   sharp,
   position,
+  distance,
   eyesOpen,
   direction,
   onCapture,
 }: Props) {
+  // ==========================================================
+  // STATE
+  // ==========================================================
+
+  const [capturedCount, setCapturedCount] = useState(0);
+
+  // ==========================================================
+  // REFS
+  // ==========================================================
+
   const readyAtRef = useRef(performance.now() + START_DELAY);
-  const [completedDirections, setCompletedDirections] = useState<
-    Set<FaceDirection>
-  >(new Set());
-
-  const [stepIndex, setStepIndex] = useState(0);
-
-  const currentStep = STEPS[stepIndex];
-  const isFinished = stepIndex >= STEPS.length;
-
-  const qualityOK =
-    !isFinished &&
-    brightness &&
-    sharp &&
-    position &&
-    eyesOpen &&
-    direction === currentStep;
-
-  const qualityOKRef = useRef(qualityOK);
-  qualityOKRef.current = qualityOK;
-
-  const directionRef = useRef(direction);
-  directionRef.current = direction;
-
-  const currentStepRef = useRef(currentStep);
-  currentStepRef.current = currentStep;
 
   const holdStartRef = useRef<number | null>(null);
+
   const cooldownRef = useRef(0);
+
   const isCapturingRef = useRef(false);
 
+  const capturedCountRef = useRef(0);
+
+  // ==========================================================
+  // CAPTURE COUNT
+  // ==========================================================
+
+  capturedCountRef.current = capturedCount;
+
+  // ==========================================================
+  // DISTANCE
+  // ==========================================================
+
+  const distanceOK = distance === "GOOD";
+
+  const distanceOKRef = useRef(distanceOK);
+
+  distanceOKRef.current = distanceOK;
+
+  // ==========================================================
+  // QUALITY
+  // ==========================================================
+
+  const qualityOK =
+    brightness && sharp && position && distanceOK && eyesOpen && direction;
+
+  const qualityOKRef = useRef(qualityOK);
+
+  qualityOKRef.current = qualityOK;
+
+  // ==========================================================
+  // FINISHED
+  // ==========================================================
+
+  const isFinished = capturedCount >= REQUIRED_FRAMES;
+
+  // ==========================================================
+  // COLLECT
+  // ==========================================================
+
   useEffect(() => {
-    if (isFinished) return;
+    if (isFinished) {
+      return;
+    }
 
     const timer = setInterval(() => {
-      if (isCapturingRef.current) return;
+      // ------------------------------------------------------
+      // Already capturing
+      // ------------------------------------------------------
 
-      // Chưa hết 2s kể từ khi mở camera
-      if (performance.now() < readyAtRef.current) {
+      if (isCapturingRef.current) {
+        return;
+      }
+
+      const now = performance.now();
+
+      // ------------------------------------------------------
+      // Camera startup delay
+      // ------------------------------------------------------
+
+      if (now < readyAtRef.current) {
         holdStartRef.current = null;
         return;
       }
 
-      if (!qualityOKRef.current || !directionRef.current) {
+      // ------------------------------------------------------
+      // Quality not ready
+      // ------------------------------------------------------
+
+      if (!qualityOKRef.current) {
         holdStartRef.current = null;
         return;
       }
 
-      if (performance.now() < cooldownRef.current) {
+      // ------------------------------------------------------
+      // Wait between frames
+      // ------------------------------------------------------
+
+      if (now < cooldownRef.current) {
         return;
       }
 
-      // Bắt đầu đếm
+      // ------------------------------------------------------
+      // Start holding
+      // ------------------------------------------------------
+
       if (holdStartRef.current === null) {
-        holdStartRef.current = performance.now();
+        holdStartRef.current = now;
         return;
       }
 
-      const elapsed = performance.now() - holdStartRef.current;
+      // ------------------------------------------------------
+      // Calculate hold time
+      // ------------------------------------------------------
+
+      const elapsed = now - holdStartRef.current;
 
       if (elapsed < HOLD_TIME) {
         return;
       }
 
+      // ======================================================
+      // CAPTURE
+      // ======================================================
 
-      // ===== Capture =====
       isCapturingRef.current = true;
 
-      const target = currentStepRef.current;
+      const frameIndex = capturedCountRef.current + 1;
 
-      cooldownRef.current = performance.now() + COOLDOWN;
+      // ------------------------------------------------------
+      // Notify parent
+      // ------------------------------------------------------
 
-      onCapture(target);
+      onCapture(frameIndex);
 
-      setCompletedDirections((prev) => {
-        const next = new Set(prev);
-        next.add(target);
-        return next;
-      });
+      // ------------------------------------------------------
+      // Update refs/state
+      // ------------------------------------------------------
 
-      setStepIndex((prev) => Math.min(prev + 1, STEPS.length));
+      capturedCountRef.current = frameIndex;
+
+      setCapturedCount(frameIndex);
 
       holdStartRef.current = null;
 
+      // ------------------------------------------------------
+      // Completed
+      // ------------------------------------------------------
+
+      if (frameIndex >= REQUIRED_FRAMES) {
+        isCapturingRef.current = false;
+
+        return;
+      }
+
+      // ------------------------------------------------------
+      // Cooldown before next frame
+      // ------------------------------------------------------
+
+      cooldownRef.current = now + FRAME_INTERVAL;
+
       setTimeout(() => {
         isCapturingRef.current = false;
-      }, COOLDOWN);
+      }, FRAME_INTERVAL);
     }, 50);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+    };
   }, [isFinished, onCapture]);
 
+  // ==========================================================
+  // RETURN
+  // ==========================================================
+
   return {
-    completedDirections,
-    expectedDirection: currentStep,
-    progress: (completedDirections.size / STEPS.length) * 100,
-    completed: completedDirections.size === STEPS.length,
-    allReady: qualityOK,
-  };
+  capturedCount,
+  requiredFrames: REQUIRED_FRAMES,
+
+  progress: capturedCount / REQUIRED_FRAMES,
+
+  completed: capturedCount === REQUIRED_FRAMES,
+
+  captureReady:
+    !isFinished &&
+    qualityOK,
+
+  distance,
+  distanceOK,
+};
 }

@@ -4,6 +4,7 @@ import type { Locations } from "../types/location.types";
 import { useTodayAttendance } from "./useTodayAttendance";
 import { useLocations } from "./useLocations";
 import { checkOutApi } from "@/lib/api/attendance.api";
+import { dataUrlToBlob } from "@/utils/dataUrlToBlob";
 
 export function useCheckOutFlow() {
   const queryClient = useQueryClient();
@@ -15,6 +16,7 @@ export function useCheckOutFlow() {
   const [location, setLocation] = useState<Locations | null>(null);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [faceImage, setFaceImage] = useState<string | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -38,17 +40,22 @@ export function useCheckOutFlow() {
     setLocation(loc);
     setLatitude(lat);
     setLongitude(lng);
-    setStep(1); // Nhảy thẳng qua Confirm step (không cần face)
+    setStep(1);
+  }, []);
+
+  const nextFace = useCallback((image: string) => {
+    setFaceImage(image);
+    setStep(2);
   }, []);
 
   const back = useCallback(() => {
     setSubmitError(null);
-    setStep(0);
+    setStep((prev) => Math.max(prev - 1, 0));
   }, []);
 
   const submit = useCallback(async () => {
-    if (latitude === null || longitude === null) {
-      setSubmitError("Thiếu thông tin vị trí hiện tại.");
+    if (latitude === null || longitude === null || !faceImage) {
+      setSubmitError("Thiếu thông tin vị trí hoặc ảnh khuôn mặt.");
       return;
     }
 
@@ -56,10 +63,16 @@ export function useCheckOutFlow() {
       setIsSubmitting(true);
       setSubmitError(null);
 
-      await checkOutApi({
-        latitude,
-        longitude,
-      });
+      const formData = new FormData();
+      formData.append("latitude", latitude.toString());
+      formData.append("longitude", longitude.toString());
+      formData.append(
+        "image",
+        dataUrlToBlob(faceImage),
+        "checkout.jpg",
+      );
+
+      await checkOutApi(formData);
 
       // Refetch queries
       await queryClient.invalidateQueries({ queryKey: ["attendance", "today"] });
@@ -80,19 +93,21 @@ export function useCheckOutFlow() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [latitude, longitude, queryClient]);
+  }, [latitude, longitude, faceImage, queryClient]);
 
   return {
     step,
     location,
     latitude,
     longitude,
+    faceImage,
     isLoadingData: isLoadingToday || isLoadingLocations,
     isSubmitting,
     submitError,
     isSuccess,
     setLocation,
     nextLocation,
+    nextFace,
     back,
     submit,
   };

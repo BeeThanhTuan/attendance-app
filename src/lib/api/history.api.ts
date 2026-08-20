@@ -4,6 +4,7 @@ import { api } from "../axios";
 export interface HistoryDayItem {
   date: string; // YYYY-MM-DD
   status: "completed" | "not_checked_in" | "checked_in" | "incomplete";
+  confirmed: boolean;
 }
 
 export interface AttendanceHistoryResponse {
@@ -11,6 +12,8 @@ export interface AttendanceHistoryResponse {
   month: number;
   worked_days: number;
   forgot_checkout_days: number;
+  confirmed_days: number;
+  unconfirmed_days: number;
   days: HistoryDayItem[];
 }
 
@@ -31,6 +34,10 @@ export interface AttendanceDetailResponse {
   check_in_at: string | null;
   check_out_at: string | null;
   checkin_image_path: string | null;
+  checkout_image_path: string | null;
+  confirmed: boolean,
+  confirmed_by: string | null;
+  confirmed_at: string | null;
   remark: string | null;
   location: AttendanceDetailLocation | null;
 }

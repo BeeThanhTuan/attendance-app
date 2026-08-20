@@ -1,28 +1,17 @@
-import { Loader2, XCircle, RefreshCw, ScanFace } from "lucide-react";
+import {
+  Loader2,
+  XCircle,
+  RefreshCw,
+  ScanFace,
+} from "lucide-react";
 
-import type { FaceDirection } from "../types/face";
-
-const ORDER: FaceDirection[] = [
-  "STRAIGHT",
-  "LEFT",
-  "RIGHT",
-  "UP",
-  "DOWN",
-];
-
-const DIRECTION_LABEL: Record<FaceDirection, string> = {
-  STRAIGHT: "Thẳng",
-  LEFT: "Trái",
-  RIGHT: "Phải",
-  UP: "Lên",
-  DOWN: "Xuống",
-};
+interface CapturedFrame {
+  index: number;
+  image: string;
+}
 
 interface Props {
-  images: {
-    direction: FaceDirection;
-    image: string;
-  }[];
+  images: CapturedFrame[];
 
   status: "uploading" | "error";
 
@@ -31,6 +20,8 @@ interface Props {
   onRetry: () => void;
 }
 
+const REQUIRED_FRAMES = 3;
+
 export default function FaceUploading({
   images,
   status,
@@ -38,13 +29,10 @@ export default function FaceUploading({
   onRetry,
 }: Props) {
   const sortedImages = [...images].sort(
-    (a, b) =>
-      ORDER.indexOf(a.direction) -
-      ORDER.indexOf(b.direction),
+    (a, b) => a.index - b.index,
   );
 
   const uploadedCount = sortedImages.length;
-  const totalCount = ORDER.length;
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-white px-6">
@@ -60,60 +48,66 @@ export default function FaceUploading({
             </p>
 
             <p className="text-xs font-semibold text-slate-400">
-              {uploadedCount}/{totalCount}
+              {uploadedCount}/{REQUIRED_FRAMES}
             </p>
           </div>
 
-          <div className="flex justify-center gap-2.5">
-            {ORDER.map((direction) => {
-              const image = sortedImages.find(
-                (item) => item.direction === direction,
-              );
+          <div className="flex justify-center gap-3">
+            {Array.from(
+              { length: REQUIRED_FRAMES },
+              (_, index) => {
+                const frameIndex = index + 1;
 
-              return (
-                <div
-                  key={direction}
-                  className="flex flex-col items-center gap-1.5"
-                >
+                const image = sortedImages.find(
+                  (item) =>
+                    item.index === frameIndex,
+                );
+
+                return (
                   <div
-                    className={`
-                      relative
-                      h-[58px] w-[58px]
-                      overflow-hidden
-                      rounded-xl
-                      bg-slate-100
-                      ring-1
-                      transition-all
-                      ${
-                        image
-                          ? "ring-slate-200"
-                          : "ring-slate-100"
-                      }
-                    `}
+                    key={frameIndex}
+                    className="flex flex-col items-center gap-1.5"
                   >
-                    {image ? (
-                      <img
-                        src={image.image}
-                        alt={DIRECTION_LABEL[direction]}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <ScanFace
-                          size={20}
-                          strokeWidth={1.7}
-                          className="text-slate-300"
+                    <div
+                      className={`
+                        relative
+                        h-[70px] w-[70px]
+                        overflow-hidden
+                        rounded-xl
+                        bg-slate-100
+                        ring-1
+                        transition-all
+                        ${
+                          image
+                            ? "ring-slate-200"
+                            : "ring-slate-100"
+                        }
+                      `}
+                    >
+                      {image ? (
+                        <img
+                          src={image.image}
+                          alt={`Frame ${frameIndex}`}
+                          className="h-full w-full object-cover"
                         />
-                      </div>
-                    )}
-                  </div>
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <ScanFace
+                            size={22}
+                            strokeWidth={1.7}
+                            className="text-slate-300"
+                          />
+                        </div>
+                      )}
+                    </div>
 
-                  <span className="text-[9px] font-semibold text-slate-400">
-                    {DIRECTION_LABEL[direction]}
-                  </span>
-                </div>
-              );
-            })}
+                    <span className="text-[9px] font-semibold text-slate-400">
+                      Frame {frameIndex}
+                    </span>
+                  </div>
+                );
+              },
+            )}
           </div>
         </div>
 
@@ -143,8 +137,9 @@ export default function FaceUploading({
             </h1>
 
             <p className="mt-3 max-w-[340px] text-sm leading-6 text-slate-500">
-              Dữ liệu khuôn mặt đã được thu thập thành công.
-              Hệ thống đang xử lý, vui lòng chờ trong giây lát.
+              3 frame khuôn mặt đã được thu thập.
+              Hệ thống đang xử lý dữ liệu, vui lòng
+              chờ trong giây lát.
             </p>
 
             {/* Progress */}

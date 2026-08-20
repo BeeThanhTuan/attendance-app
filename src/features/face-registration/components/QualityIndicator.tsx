@@ -1,11 +1,15 @@
 import { CheckCircle2, AlertCircle } from "lucide-react";
 
+import type { FaceDirection, FaceDistance } from "../types/face";
+
 interface Props {
   detected?: boolean;
   brightness?: boolean;
   sharp?: boolean;
   position?: boolean;
   eyesOpen?: boolean;
+  direction?: FaceDirection | null;
+  distance?: FaceDistance;
 }
 
 export default function QualityIndicator({
@@ -14,14 +18,21 @@ export default function QualityIndicator({
   sharp = false,
   position = false,
   eyesOpen = false,
+  direction = null,
+  distance = "TOO_FAR",
 }: Props) {
   let message = "";
   let success = false;
-
   if (!detected) {
     message = "Không phát hiện khuôn mặt";
   } else if (!position) {
-    message = "Vui lòng khuôn mặt vào đúng khung";
+    message = "Vui lòng đưa khuôn mặt vào đúng khung";
+  } else if (distance === "TOO_FAR") {
+    message = "Vui lòng tiến lại gần camera";
+  } else if (distance === "TOO_CLOSE") {
+    message = "Vui lòng lùi ra xa camera";
+  } else if (direction !== "STRAIGHT") {
+    message = "Vui lòng nhìn thẳng vào camera";
   } else if (!eyesOpen) {
     message = "Vui lòng mở mắt";
   } else if (!brightness) {
@@ -32,32 +43,33 @@ export default function QualityIndicator({
     success = true;
     message = "Điều kiện đạt, giữ nguyên khuôn mặt";
   }
-
   return (
     <div
       className={`
+        absolute
+        top-1/4
+        left-1/2
+        -translate-x-1/2
+        -translate-y-1/4
+        w-fit
         flex items-center gap-3
         rounded-full
+        border
         px-4 py-3
         backdrop-blur-xl
-        
-        border
 
-        ${success
-          ? "border-emerald-500/30 bg-emerald-500/15"
-          : "border-white/10 bg-black/60"
+        ${
+          success
+            ? "border-emerald-500/30 bg-emerald-500/15"
+            : "border-white/10 bg-black/60"
         }
       `}
     >
-      {success ? (
-        <CheckCircle2 size={20} className="shrink-0 text-emerald-400" />
-      ) : (
-        <AlertCircle size={20} className="shrink-0 text-cyan-400" />
-      )}
-
       <span
-        className={`text-sm font-medium ${success ? "text-emerald-300" : "text-white"
-          }`}
+        className={`
+          text-sm font-medium truncate
+          ${success ? "text-emerald-300" : "text-white"}
+        `}
       >
         {message}
       </span>

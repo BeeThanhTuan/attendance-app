@@ -72,6 +72,8 @@ export default function HistoryPage() {
             month={month}
             worked_days={data?.worked_days}
             forgot_checkout_days={data?.forgot_checkout_days}
+            confirmed_days={data?.confirmed_days}
+            unconfirmed_days={data?.unconfirmed_days}
             days={data?.days ?? []}
             onPrevMonth={handlePrevMonth}
             onNextMonth={handleNextMonth}

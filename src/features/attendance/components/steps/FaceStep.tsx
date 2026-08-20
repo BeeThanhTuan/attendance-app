@@ -14,7 +14,7 @@ interface Props {
   onNext(faceImage: string): void;
 }
 
-const HOLD_TIME = 800; // ms khuôn mặt phải đứng yên trước khi chụp
+const HOLD_TIME = 500; // ms khuôn mặt phải đứng yên trước khi chụp
 
 export default function FaceStep({ onBack, onNext }: Props) {
   const webcamRef = useRef<Webcam>(null);
@@ -25,10 +25,7 @@ export default function FaceStep({ onBack, onNext }: Props) {
   const { detected, brightness, sharp, position, direction, eyesOpen } =
     useFaceDetection({ webcamRef });
 
-  /**
-   * Tất cả điều kiện chất lượng phải đạt
-   * và hướng nhìn thẳng (STRAIGHT).
-   */
+
   const allReady =
     detected &&
     brightness &&
@@ -91,7 +88,7 @@ export default function FaceStep({ onBack, onNext }: Props) {
   return (
     <div className="relative h-full overflow-hidden rounded-2xl bg-black">
       {/* Camera */}
-      <FaceCamera webcamRef={webcamRef} detected={detected} />
+      <FaceCamera webcamRef={webcamRef}  />
 
       {/* Flash */}
       <CaptureFlash trigger={flashTrigger} />
@@ -120,16 +117,6 @@ export default function FaceStep({ onBack, onNext }: Props) {
 
         {/* Instruction & Status */}
         <div className="space-y-3">
-          <div className="rounded-2xl bg-white/10 px-4 py-3 text-center backdrop-blur-sm">
-            <p className="text-sm font-medium text-white">
-              {captured
-                ? "✅ Đã chụp – đang chuyển bước..."
-                : allReady
-                  ? "Giữ nguyên, đang chụp..."
-                  : "Nhìn thẳng vào camera"}
-            </p>
-          </div>
-
           {/* Quality indicator */}
           <QualityIndicator
             detected={detected}
