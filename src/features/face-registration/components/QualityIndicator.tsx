@@ -1,5 +1,3 @@
-import { CheckCircle2, AlertCircle } from "lucide-react";
-
 import type { FaceDirection, FaceDistance } from "../types/face";
 
 interface Props {
@@ -10,6 +8,7 @@ interface Props {
   eyesOpen?: boolean;
   direction?: FaceDirection | null;
   distance?: FaceDistance;
+  failed?: boolean;
 }
 
 export default function QualityIndicator({
@@ -20,10 +19,14 @@ export default function QualityIndicator({
   eyesOpen = false,
   direction = null,
   distance = "TOO_FAR",
+  failed = false,
 }: Props) {
   let message = "";
   let success = false;
-  if (!detected) {
+
+  if (failed) {
+    message = "Không đáp ứng các điều kiện để đăng ký khuôn mặt";
+  } else if (!detected) {
     message = "Không phát hiện khuôn mặt";
   } else if (!position) {
     message = "Vui lòng đưa khuôn mặt vào đúng khung";
@@ -43,21 +46,16 @@ export default function QualityIndicator({
     success = true;
     message = "Điều kiện đạt, giữ nguyên khuôn mặt";
   }
+
   return (
     <div
       className={`
-        absolute
-        top-1/4
-        left-1/2
-        -translate-x-1/2
-        -translate-y-1/4
         w-fit
         flex items-center gap-3
         rounded-full
         border
         px-4 py-3
         backdrop-blur-xl
-
         ${
           success
             ? "border-emerald-500/30 bg-emerald-500/15"
@@ -67,7 +65,7 @@ export default function QualityIndicator({
     >
       <span
         className={`
-          text-sm font-medium truncate
+          text-sm font-medium text-center
           ${success ? "text-emerald-300" : "text-white"}
         `}
       >

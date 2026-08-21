@@ -3,69 +3,50 @@ import { motion } from "framer-motion";
 
 interface Props {
   webcamRef: React.RefObject<Webcam | null>;
-
-  /**
-   * Đã đủ điều kiện để bắt đầu capture.
-   */
   ready: boolean;
-
-  /**
-   * Progress capture:
-   * 0 -> 1
-   */
+  captureStarted: boolean;
   progress: number;
-
-  /**
-   * Đã capture đủ 3 ảnh.
-   */
   allReady: boolean;
-
-  /**
-   * Đang xử lý/upload embedding.
-   */
   uploading?: boolean;
-
-  /**
-   * Đăng ký thất bại.
-   */
   error?: boolean;
 }
 
 export default function FaceCamera({
   webcamRef,
   ready,
+  captureStarted,
   progress,
   allReady,
   uploading = false,
   error = false,
 }: Props) {
-  const safeProgress = Math.min(Math.max(progress, 0), 1);
 
+  const safeProgress = Math.min(Math.max(progress, 0), 1);
   const size = 280;
   const strokeWidth = 10;
-
-  const svgSize = size + 20;
+  const gap = 10;
+  const svgSize = size + gap * 2 + strokeWidth;
   const ringRadius = (svgSize - strokeWidth) / 2;
   const circumference = 2 * Math.PI * ringRadius;
-
-  const circleMode =
-    ready ||
-    allReady ||
-    uploading ||
-    error;
-
-  /**
-   * Progress chỉ thực sự được hiển thị
-   * khi camera đã đạt điều kiện.
-   *
-   * Nhưng khi ready vừa true thì progress
-   * vẫn bắt đầu từ giá trị collector truyền xuống.
-   */
-  const showProgress =
-    circleMode && (safeProgress > 0 || allReady || uploading || error);
-
+  const circleMode = captureStarted || allReady || uploading || error;
+  const showProgress = captureStarted || allReady || uploading || error;
+  const progressColor = error ? "#ef4444" : "#2196f3";
+  const backgroundColor = error
+    ? "rgba(239,68,68,0.38)"
+    : "rgba(33,150,243,0.35)";
   return (
-    <div className="relative h-full w-full overflow-hidden bg-white">
+    <div
+      className="
+        relative
+        flex
+        h-full
+        w-full
+        items-center
+        justify-center
+        overflow-hidden
+        bg-white
+      "
+    >
       {/* =====================================================
           CAMERA
       ====================================================== */}
@@ -75,16 +56,7 @@ export default function FaceCamera({
         animate={{
           width: size,
           height: size,
-
           borderRadius: circleMode ? "50%" : "24px",
-
-          boxShadow: error
-            ? "0 0 35px rgba(239,68,68,0.25)"
-            : uploading
-              ? "0 0 40px rgba(59,130,246,0.30)"
-              : circleMode
-                ? "0 0 35px rgba(59,130,246,0.20)"
-                : "0 0 20px rgba(0,0,0,0.10)",
         }}
         transition={{
           duration: 0.55,
@@ -117,33 +89,31 @@ export default function FaceCamera({
           "
         />
 
-        {/* =================================================
-            READY EFFECT
+        {/* ==================================================
+            NHẬN DIỆN ĐANG ĐẠT ĐIỀU KIỆN
         ================================================== */}
 
-        {circleMode && !uploading && !error && !allReady && (
+        {ready && captureStarted && !uploading && !error && !allReady && (
           <motion.div
             initial={{
               opacity: 0,
-              scale: 0.96,
             }}
             animate={{
-              opacity: [0, 0.35, 0],
-              scale: [0.96, 1.01, 1.04],
+              opacity: [0, 0.12, 0],
             }}
             transition={{
-              duration: 1.8,
+              duration: 1.5,
               repeat: Infinity,
-              ease: "easeOut",
+              ease: "easeInOut",
             }}
             className="
-              pointer-events-none
-              absolute
-              inset-0
-              rounded-full
-              border-2
-              border-blue-400
-            "
+                pointer-events-none
+                absolute
+                inset-0
+                rounded-full
+                border-2
+                border-blue-400
+              "
           />
         )}
       </motion.div>
@@ -155,14 +125,14 @@ export default function FaceCamera({
       <motion.svg
         initial={{
           opacity: 0,
-          scale: 0.92,
+          scale: 0.96,
         }}
         animate={{
           opacity: showProgress ? 1 : 0,
-          scale: showProgress ? 1 : 0.92,
+          scale: showProgress ? 1 : 0.96,
         }}
         transition={{
-          duration: 0.35,
+          duration: 0.3,
           ease: [0.4, 0, 0.2, 1],
         }}
         className="
@@ -178,29 +148,29 @@ export default function FaceCamera({
         height={svgSize}
         viewBox={`0 0 ${svgSize} ${svgSize}`}
       >
-        {/* Background */}
+        {/* ==================================================
+            BACKGROUND RING
+        ================================================== */}
 
         <circle
           cx={svgSize / 2}
           cy={svgSize / 2}
           r={ringRadius}
           fill="none"
-          stroke={
-            error
-              ? "rgba(239,68,68,0.18)"
-              : "rgba(59,130,246,0.15)"
-          }
+          stroke={backgroundColor}
           strokeWidth={strokeWidth}
         />
 
-        {/* Progress */}
+        {/* ==================================================
+            RUNNING PROGRESS
+        ================================================== */}
 
         <motion.circle
           cx={svgSize / 2}
           cy={svgSize / 2}
           r={ringRadius}
           fill="none"
-          stroke={error ? "#ef4444" : "#2196f3"}
+          stroke={progressColor}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -208,32 +178,35 @@ export default function FaceCamera({
             strokeDashoffset: circumference,
           }}
           animate={{
-            strokeDashoffset:
-              circumference * (1 - safeProgress),
+            strokeDashoffset: circumference * (1 - safeProgress),
           }}
           transition={{
-            duration: 0.35,
-            ease: "easeOut",
+            /**
+             * Collector update mỗi 50ms.
+             *
+             * Để progress bám sát thời gian thật,
+             * không dùng duration quá dài.
+             */
+            duration: 0.05,
+            ease: "linear",
           }}
         />
       </motion.svg>
 
       {/* =====================================================
-          UPLOADING EFFECT
+          PROCESSING
       ====================================================== */}
 
       {uploading && (
         <motion.div
           initial={{
             opacity: 0,
-            scale: 0.9,
           }}
           animate={{
-            opacity: [0, 0.45, 0],
-            scale: [0.9, 1.05, 1.12],
+            opacity: [0, 0.35, 0],
           }}
           transition={{
-            duration: 1.5,
+            duration: 1.4,
             repeat: Infinity,
             ease: "easeOut",
           }}
@@ -252,104 +225,6 @@ export default function FaceCamera({
           "
         />
       )}
-
-      {/* =====================================================
-          UPLOAD INDICATOR
-      ====================================================== */}
-
-      {uploading && (
-        <motion.div
-          initial={{
-            opacity: 0,
-            scale: 0.8,
-          }}
-          animate={{
-            opacity: [0.4, 1, 0.4],
-            scale: [0.9, 1.1, 0.9],
-          }}
-          transition={{
-            duration: 1,
-            repeat: Infinity,
-          }}
-          className="
-            pointer-events-none
-            absolute
-            left-1/2
-            top-1/2
-            h-3
-            w-3
-            -translate-x-1/2
-            -translate-y-1/2
-            rounded-full
-            bg-blue-500
-          "
-        />
-      )}
-
-      {/* =====================================================
-          MESSAGE
-      ====================================================== */}
-
-      <div
-        className="
-          absolute
-          left-1/2
-          top-[calc(50%+180px)]
-          -translate-x-1/2
-        "
-      >
-        {uploading && (
-          <motion.div
-            initial={{
-              opacity: 0,
-              y: 8,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            className="
-              whitespace-nowrap
-              rounded-full
-              bg-blue-500/90
-              px-5
-              py-2.5
-              text-sm
-              font-medium
-              text-white
-              shadow-lg
-            "
-          >
-            Đang xử lý khuôn mặt...
-          </motion.div>
-        )}
-
-        {error && !uploading && (
-          <motion.div
-            initial={{
-              opacity: 0,
-              y: 8,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            className="
-              whitespace-nowrap
-              rounded-full
-              bg-red-500/90
-              px-5
-              py-2.5
-              text-sm
-              font-medium
-              text-white
-              shadow-lg
-            "
-          >
-            Đăng ký khuôn mặt thất bại
-          </motion.div>
-        )}
-      </div>
     </div>
   );
 }

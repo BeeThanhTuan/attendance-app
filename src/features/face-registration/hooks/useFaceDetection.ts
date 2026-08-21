@@ -9,14 +9,12 @@ import { PoseFilter } from "../utils/poseFilter";
 import { getEyeEAR } from "../utils/eye";
 import { EyeStateFilter } from "../utils/eyeFilter";
 
-import type {
-  FaceDirection,
-  FaceDistance,
-} from "../types/face";
+import type { FaceDirection, FaceDistance } from "../types/face";
 import { isFaceInsideOval } from "../utils/facePosition";
 
 interface Props {
   webcamRef: React.RefObject<Webcam | null>;
+  enabled?: boolean;
 }
 
 interface FaceDetectionState {
@@ -30,40 +28,31 @@ interface FaceDetectionState {
   direction: FaceDirection | null;
 }
 
-export function useFaceDetection({
-  webcamRef,
-}: Props) {
-  const [state, setState] =
-    useState<FaceDetectionState>({
-      detected: false,
-      brightness: false,
-      sharp: false,
-      position: false,
-      distance: "TOO_FAR",
-      pose: false,
-      eyesOpen: false,
-      direction: null,
-    });
+export function useFaceDetection({ webcamRef, enabled = true }: Props) {
+  const [state, setState] = useState<FaceDetectionState>({
+    detected: false,
+    brightness: false,
+    sharp: false,
+    position: false,
+    distance: "TOO_FAR",
+    pose: false,
+    eyesOpen: false,
+    direction: null,
+  });
 
   // ==========================================================
   // CANVAS
   // ==========================================================
 
-  const canvasRef = useRef(
-    document.createElement("canvas"),
-  );
+  const canvasRef = useRef(document.createElement("canvas"));
 
   // ==========================================================
   // FILTERS
   // ==========================================================
 
-  const poseFilter = useRef(
-    new PoseFilter(),
-  );
+  const poseFilter = useRef(new PoseFilter());
 
-  const eyeFilter = useRef(
-    new EyeStateFilter(),
-  );
+  const eyeFilter = useRef(new EyeStateFilter());
 
   // ==========================================================
   // POSE STABILITY
@@ -71,23 +60,21 @@ export function useFaceDetection({
 
   const stableCount = useRef(0);
 
-  const lastDirection =
-    useRef<FaceDirection | null>(null);
+  const lastDirection = useRef<FaceDirection | null>(null);
 
   // ==========================================================
   // EFFECT
   // ==========================================================
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     let mounted = true;
 
     let frame = 0;
 
-    let detector:
-      | Awaited<
-          ReturnType<typeof getFaceLandmarker>
-        >
-      | null = null;
+    let detector: Awaited<ReturnType<typeof getFaceLandmarker>> | null = null;
 
     // Cache image quality
     let brightness = false;
@@ -100,8 +87,7 @@ export function useFaceDetection({
     // ========================================================
 
     async function start() {
-      detector =
-        await getFaceLandmarker();
+      detector = await getFaceLandmarker();
 
       if (!mounted || !detector) {
         return;
@@ -116,23 +102,15 @@ export function useFaceDetection({
           return;
         }
 
-        frame =
-          requestAnimationFrame(
-            detect,
-          );
+        frame = requestAnimationFrame(detect);
 
-        const video =
-          webcamRef.current?.video;
+        const video = webcamRef.current?.video;
 
         // ----------------------------------------------------
         // VIDEO NOT READY
         // ----------------------------------------------------
 
-        if (
-          !video ||
-          video.readyState !== 4 ||
-          video.videoWidth === 0
-        ) {
+        if (!video || video.readyState !== 4 || video.videoWidth === 0) {
           return;
         }
 
@@ -140,20 +118,13 @@ export function useFaceDetection({
         // MEDIAPIPE
         // ----------------------------------------------------
 
-        const result =
-          detector.detectForVideo(
-            video,
-            performance.now(),
-          );
+        const result = detector.detectForVideo(video, performance.now());
 
         // ====================================================
         // NO FACE
         // ====================================================
 
-        if (
-          result.faceLandmarks.length ===
-          0
-        ) {
+        if (result.faceLandmarks.length === 0) {
           poseFilter.current.reset();
 
           eyeFilter.current.reset();
@@ -180,8 +151,7 @@ export function useFaceDetection({
         // FACE
         // ====================================================
 
-        const landmarks =
-          result.faceLandmarks[0];
+        const landmarks = result.faceLandmarks[0];
 
         // ====================================================
         // FACE BOUNDING BOX
@@ -194,25 +164,13 @@ export function useFaceDetection({
         let maxY = 0;
 
         for (const landmark of landmarks) {
-          minX = Math.min(
-            minX,
-            landmark.x,
-          );
+          minX = Math.min(minX, landmark.x);
 
-          maxX = Math.max(
-            maxX,
-            landmark.x,
-          );
+          maxX = Math.max(maxX, landmark.x);
 
-          minY = Math.min(
-            minY,
-            landmark.y,
-          );
+          minY = Math.min(minY, landmark.y);
 
-          maxY = Math.max(
-            maxY,
-            landmark.y,
-          );
+          maxY = Math.max(maxY, landmark.y);
         }
 
         const faceWidth = maxX - minX;
@@ -242,35 +200,25 @@ export function useFaceDetection({
         // EYES
         // ====================================================
 
-        const eyeData =
-          getEyeEAR(landmarks);
+        const eyeData = getEyeEAR(landmarks);
 
-        const eyesOpen =
-          eyeFilter.current.update(
-            eyeData.leftEAR,
-            eyeData.rightEAR,
-          );
+        const eyesOpen = eyeFilter.current.update(
+          eyeData.leftEAR,
+          eyeData.rightEAR,
+        );
 
         // ====================================================
         // FACE POSE
         // ====================================================
 
-        let direction:
-          FaceDirection | null =
-          "STRAIGHT";
+        let direction: FaceDirection | null = "STRAIGHT";
 
         let poseOK = false;
 
-        const matrix =
-          result
-            .facialTransformationMatrixes?.[0]
-            ?.data;
+        const matrix = result.facialTransformationMatrixes?.[0]?.data;
 
         if (matrix) {
-          const pose =
-            poseFilter.current.update(
-              estimateFacePose(matrix),
-            );
+          const pose = poseFilter.current.update(estimateFacePose(matrix));
 
           const yaw = pose.yaw;
           const pitch = pose.pitch;
@@ -279,13 +227,10 @@ export function useFaceDetection({
           // STRAIGHT
           // --------------------------------------------------
 
-          const isStraight =
-            Math.abs(yaw) <= 8 &&
-            Math.abs(pitch) <= 8;
+          const isStraight = Math.abs(yaw) <= 8 && Math.abs(pitch) <= 8;
 
           if (isStraight) {
-            direction =
-              "STRAIGHT";
+            direction = "STRAIGHT";
           } else {
             direction = null;
           }
@@ -295,44 +240,35 @@ export function useFaceDetection({
           // --------------------------------------------------
 
           if (isStraight) {
-            if (
-              lastDirection.current ===
-              "STRAIGHT"
-            ) {
+            if (lastDirection.current === "STRAIGHT") {
               stableCount.current++;
             } else {
               stableCount.current = 1;
 
-              lastDirection.current =
-                "STRAIGHT";
+              lastDirection.current = "STRAIGHT";
             }
           } else {
             stableCount.current = 0;
 
-            lastDirection.current =
-              null;
+            lastDirection.current = null;
           }
 
           // --------------------------------------------------
           // POSE OK
           // --------------------------------------------------
 
-          poseOK =
-            isStraight &&
-            stableCount.current >= 10;
+          poseOK = isStraight && stableCount.current >= 10;
         } else {
           stableCount.current = 0;
 
-          lastDirection.current =
-            null;
+          lastDirection.current = null;
         }
 
         // ====================================================
         // IMAGE QUALITY
         // ====================================================
 
-        const now =
-          performance.now();
+        const now = performance.now();
 
         /*
          * Không cần check brightness/sharp
@@ -341,47 +277,27 @@ export function useFaceDetection({
          * Chỉ check mỗi 200ms.
          */
 
-        if (
-          now - lastQuality >
-          200
-        ) {
+        if (now - lastQuality > 200) {
           lastQuality = now;
 
-          const canvas =
-            canvasRef.current;
+          const canvas = canvasRef.current;
 
-          canvas.width =
-            video.videoWidth;
+          canvas.width = video.videoWidth;
 
-          canvas.height =
-            video.videoHeight;
+          canvas.height = video.videoHeight;
 
-          const ctx =
-            canvas.getContext("2d", {
-              willReadFrequently: true,
-            });
+          const ctx = canvas.getContext("2d", {
+            willReadFrequently: true,
+          });
 
           if (ctx) {
-            ctx.drawImage(
-              video,
-              0,
-              0,
-              canvas.width,
-              canvas.height,
-            );
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            const quality =
-              checkImageQuality(
-                ctx,
-                canvas.width,
-                canvas.height,
-              );
+            const quality = checkImageQuality(ctx, canvas.width, canvas.height);
 
-            brightness =
-              quality.brightness;
+            brightness = quality.brightness;
 
-            sharp =
-              quality.isSharp;
+            sharp = quality.isSharp;
           }
         }
 
@@ -426,7 +342,7 @@ export function useFaceDetection({
 
       cancelAnimationFrame(frame);
     };
-  }, [webcamRef]);
+  }, [webcamRef, enabled]);
 
   return state;
 }

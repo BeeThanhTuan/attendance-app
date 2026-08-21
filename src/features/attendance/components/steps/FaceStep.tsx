@@ -22,7 +22,7 @@ export default function FaceStep({ onBack, onNext }: Props) {
   const [flashTrigger, setFlashTrigger] = useState(0);
   const [captured, setCaptured] = useState(false);
 
-  const { detected, brightness, sharp, position, direction, eyesOpen } =
+  const { detected, brightness, sharp, position, direction, eyesOpen, distance } =
     useFaceDetection({ webcamRef });
 
 
@@ -33,6 +33,7 @@ export default function FaceStep({ onBack, onNext }: Props) {
     position &&
     eyesOpen &&
     direction === "STRAIGHT";
+    distance ==="GOOD"
 
   const allReadyRef = useRef(allReady);
   allReadyRef.current = allReady;
@@ -100,14 +101,14 @@ export default function FaceStep({ onBack, onNext }: Props) {
           <button
             type="button"
             onClick={handleBack}
-            className="flex size-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-md active:scale-95 text-white"
+            className="flex size-10 items-center justify-center rounded-xl bg-salte-300/15 backdrop-blur-md active:scale-95 text-slate-700"
           >
             <ChevronLeft className="size-5" />
           </button>
 
           <div className="flex flex-1 items-center justify-center gap-2">
-            <ScanFace className="size-5 text-white" />
-            <h1 className="text-base font-semibold text-white">
+            <ScanFace className="size-5 text-slate-700" />
+            <h1 className="text-base font-semibold text-slate-700">
               Xác thực khuôn mặt
             </h1>
           </div>
@@ -116,7 +117,7 @@ export default function FaceStep({ onBack, onNext }: Props) {
         </div>
 
         {/* Instruction & Status */}
-        <div className="space-y-3">
+        <div className="space-y-3 flex justify-center items-center">
           {/* Quality indicator */}
           <QualityIndicator
             detected={detected}
@@ -124,6 +125,7 @@ export default function FaceStep({ onBack, onNext }: Props) {
             sharp={sharp}
             position={position}
             eyesOpen={eyesOpen}
+            distance={distance}
           />
         </div>
       </div>

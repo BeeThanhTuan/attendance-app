@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
-import { ArrowLeft, RotateCcw } from "lucide-react";
+import { ArrowLeft, RotateCcw, Undo2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import FaceCamera from "./FaceCamera";
@@ -16,6 +16,7 @@ import {
 } from "../hooks/useRegisterFace";
 
 import { dataUrlToBlob } from "@/utils/dataUrlToBlob";
+import AppHeader from "@/shared/components/Header";
 
 interface Props {
   mode?: FaceRegistrationMode;
@@ -74,36 +75,6 @@ export default function FaceRegistrationFlow({
   // FACE DETECTION
   // ==========================================================
 
-  const {
-    detected,
-    brightness,
-    sharp,
-    position,
-    direction,
-    eyesOpen,
-    distance,
-  } = useFaceDetection({
-    webcamRef,
-  });
-
-  /**
-   * Face is ready when ALL registration conditions pass.
-   *
-   * This is what changes the square into the circle.
-   */
-  const faceReady =
-    detected &&
-    brightness &&
-    sharp &&
-    position &&
-    eyesOpen &&
-    direction === "STRAIGHT" &&
-    distance === "GOOD";
-
-  // ==========================================================
-  // CAPTURE
-  // ==========================================================
-
   const handleCapture = useCallback((frameIndex: number) => {
     const image = webcamRef.current?.getScreenshot();
 
@@ -138,24 +109,43 @@ export default function FaceRegistrationFlow({
     });
   }, []);
 
-  // ==========================================================
-  // FACE COLLECTOR
-  // ==========================================================
+  const [detectionEnabled, setDetectionEnabled] = useState(true);
+  const {
+    detected,
+    brightness,
+    sharp,
+    position,
+    direction,
+    eyesOpen,
+    distance,
+  } = useFaceDetection({
+    webcamRef,
+    enabled: detectionEnabled,
+  });
 
-  const { progress, captureReady, completed, requiredFrames } =
-    useFaceCollector({
-      brightness,
-      sharp,
-      position,
-      distance,
-      eyesOpen,
-      direction: direction === "STRAIGHT",
-      onCapture: handleCapture,
-    });
+  const {
+    progress,
+    captureReady,
+    captureStarted,
+    completed,
+    allReady,
+    failed,
+    requiredFrames,
+  } = useFaceCollector({
+    brightness,
+    sharp,
+    position,
+    distance,
+    eyesOpen,
+    direction: direction === "STRAIGHT",
+    onCapture: handleCapture,
+  });
 
-  // ==========================================================
-  // UPLOAD
-  // ==========================================================
+  useEffect(() => {
+    if (failed) {
+      setDetectionEnabled(false);
+    }
+  }, [failed]);
 
   const uploadFace = useCallback(() => {
     if (images.length !== requiredFrames) {
@@ -241,79 +231,27 @@ export default function FaceRegistrationFlow({
 
   return (
     <div className="relative h-dvh overflow-hidden">
-      {/* ====================================================
-          CAMERA + FACE FRAME
-      ===================================================== */}
-
-      <FaceCamera
-        webcamRef={webcamRef}
-        ready={captureReady}
-        progress={progress}
-        allReady={completed}
-      />
-
-      {/* ====================================================
-          CAPTURE FLASH
-      ===================================================== */}
-
       <CaptureFlash trigger={flashTrigger} />
+      <div className="absolute inset-0 z-20 flex flex-col justify-between">
+        <AppHeader showBack title={title}  />
 
-      {/* ====================================================
-          CONTENT
-      ===================================================== */}
-
-      <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-between p-4">
-        {/* ==================================================
-            HEADER
-        ================================================== */}
-
-        <div className="pointer-events-auto flex items-center">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            disabled={uploading}
-            className="
-              flex
-              h-10
-              w-10
-              items-center
-              justify-center
-              rounded-full
-              bg-black/25
-              backdrop-blur-xl
-              transition
-              active:scale-95
-              disabled:pointer-events-none
-              disabled:opacity-40
-            "
-          >
-            <ArrowLeft className="size-5 text-white" />
-          </button>
-
-          <h1
-            className="
-              flex-1
-              text-center
-              text-base
-              font-semibold
-              text-white
-            "
-          >
-            {title}
-          </h1>
-
-          <div className="w-10" />
-        </div>
-
-        {/* ==================================================
-            BOTTOM STATUS
-        ================================================== */}
-
-        <div className="pointer-events-auto flex flex-col items-center gap-3">
+        <div className="pointer-events-auto flex flex-col w-full h-full items-center justify-center gap-2 p-4">
           {/* -----------------------------------------------
               NORMAL FACE CHECK
           ------------------------------------------------ */}
-
+          <div className="w-full h-[320px] flex justify-center items-center">
+            <div className="w-[330px] h-[330px]">
+              <FaceCamera
+                webcamRef={webcamRef}
+                ready={captureReady}
+                captureStarted={captureStarted}
+                progress={progress}
+                allReady={allReady}
+                uploading={uploading}
+                error={failed}
+              />
+            </div>
+          </div>
           {!completed && (
             <QualityIndicator
               detected={detected}
@@ -323,8 +261,35 @@ export default function FaceRegistrationFlow({
               eyesOpen={eyesOpen}
               direction={direction}
               distance={distance}
+              failed={failed}
             />
           )}
+          {
+            failed &&(
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="
+                  flex
+                  items-center
+                  gap-2
+                  rounded-full
+                  bg-white
+                  px-4
+                  py-2
+                  text-sm
+                  font-semibold
+                  text-black
+                  transition
+                  active:scale-95
+                "
+              >
+                <RotateCcw className="size-4" />
+                Thử lại
+              </button>
+
+            )
+          }
 
           {/* -----------------------------------------------
               UPLOADING
@@ -364,8 +329,25 @@ export default function FaceRegistrationFlow({
                   text-white
                 "
               >
-                Đang xử lý khuôn mặt...
+                Đang đăng ký khuôn mặt
               </span>
+              {error && !uploading && (
+                <div
+                  className="
+                    whitespace-nowrap
+                    rounded-full
+                    bg-red-500/90
+                    px-5
+                    py-2.5
+                    text-sm
+                    font-medium
+                    text-white
+                    shadow-lg
+                  "
+                >
+                  Đăng ký khuôn mặt thất bại
+                </div>
+              )}
             </div>
           )}
 
